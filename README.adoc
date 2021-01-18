@@ -1,21 +1,21 @@
-= Velero Local
+== Velero Local
 
-== Prequest
+=== Prequest
 that you can install velero you have a kind-cluster and minio running
 
-=== Minio running in a docker container
+==== Minio running in a docker container
 
 ```bash
-docker run -p 9000:9000 --name minio \
+docker run -d --rm -p 9000:9000 --name minio \
   -e "MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE" \
   -e "MINIO_ROOT_PASSWORD=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
   -v ${HOME}/dev/velero/data:/data \
   minio/minio server /data
 ```
-to get access on a mac => systempreference - network - IP   <ip-address>:9000
+to get access on a mac => systempreference - network - IP   <ip-address>:9000 or localhost:9000
 add a new bucket => acme-develpoment
 
-=== Kind Kubernetes in Docker
+==== Kind Kubernetes in Docker
 
 kind create cluster --name velero --image kindest/node:v1.19.1
 
@@ -30,21 +30,28 @@ kind create cluster --name velero --image kindest/node:v1.19.1
 docker run -it --rm -v ${HOME}:/root/ -v ${PWD}:/work -w /work --net host alpine sh
 
 # install curl & kubectl
-apk add --no-cache curl
-curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+in the container
+```bash
+export KUBE_VERSION=v1.19.1
+apk add --no-cache curl vim
+#curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
 chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
+```
 
 # install verlero 1.5.1
-VERSION=1.5.1
+in the container
+
+```bash
+export VELERO_VERSION=v1.5.1
 # version see https://github.com/vmware-tanzu/velero/releases/
-curl -L -o /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/${VERSION}/velero-v1.5.1-linux-amd64.tar.gz
+curl -L -o /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERSION}/velero-${VERERO_VERSION}-linux-amd64.tar.gz
 tar -C /tmp -xvf /tmp/velero.tar.gz
-mv /tmp/velero-v${VERSION}-linux-amd64/velero /usr/local/bin/velero
+mv /tmp/velero-${VELERO_VERSION}-linux-amd64/velero /usr/local/bin/velero
 chmod +x /usr/local/bin/velero
-
-````
-
+```
+ 
 Plugin: AWS <br>
 https://github.com/vmware-tanzu/velero-plugin-for-aws
 
@@ -65,8 +72,25 @@ velero install \
 --backup-location-config region=minio,s3ForcePathStyle="true",s3Url=http://<ip-address>:9000
 ```
 
+=== Backup
 
-== Trubleshot
+```bash
+# velero backup create default-namespace-backup --include-namespaces default
+
+# velero backup describe default-namespace-backup
+
+# velero backup logs default-namespace-backup
+```
+
+
+
+=== Restore
+
+```bash
+# velero restore create default-namespace-backup --from-backup default-namespace-backup
+```
+
+=== Trubleshot
 
 _time="2021-01-06T11:51:17Z" level=info msg="No backup locations were ready to be verified" controller=backupstoragelocation logSource="pkg/controller/backupstoragelocation_controller.go:120"
 time="2021-01-06T11:51:17Z" level=error msg="Current backup storage locations available/unavailable/unknown: 0/0/1)" controller=backupstoragelocation logSource="pkg/controller/backupstoragelocation_controller.go:154"
