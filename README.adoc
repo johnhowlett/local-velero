@@ -1,0 +1,80 @@
+= Velero Local
+
+== Prequest
+that you can install velero you have a kind-cluster and minio running
+
+=== Minio running in a docker container
+
+```bash
+docker run -p 9000:9000 --name minio \
+  -e "MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE" \
+  -e "MINIO_ROOT_PASSWORD=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
+  -v ${HOME}/dev/velero/data:/data \
+  minio/minio server /data
+```
+to get access on a mac => systempreference - network - IP   <ip-address>:9000
+add a new bucket => acme-develpoment
+
+=== Kind Kubernetes in Docker
+
+kind create cluster --name velero --image kindest/node:v1.19.1
+
+
+=== Install Velero
+
+1. with brew
+
+2. in a container
+
+```bash
+docker run -it --rm -v ${HOME}:/root/ -v ${PWD}:/work -w /work --net host alpine sh
+
+# install curl & kubectl
+apk add --no-cache curl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+mv ./kubectl /usr/local/bin/kubectl
+
+# install verlero 1.5.1
+VERSION=1.5.1
+# version see https://github.com/vmware-tanzu/velero/releases/
+curl -L -o /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/${VERSION}/velero-v1.5.1-linux-amd64.tar.gz
+tar -C /tmp -xvf /tmp/velero.tar.gz
+mv /tmp/velero-v${VERSION}-linux-amd64/velero /usr/local/bin/velero
+chmod +x /usr/local/bin/velero
+
+````
+
+Plugin: AWS <br>
+https://github.com/vmware-tanzu/velero-plugin-for-aws
+
+generate a security file
+```bash
+echo '[default]' > ~/dev/velero/creds/credentials-velero-minio
+echo 'aws_access_key_id = minioadmin'  >> ~/dev/velero/creds/credentials-velero-minio
+echo 'aws_secret_access_key = minioadmin' >> ~/dev/velero/creds/credentials-velero-minio
+```
+
+```bash
+velero install \
+--provider aws \
+--plugins velero/velero-plugin-for-aws:v1.1.0 \
+--use-volume-snapshots=false \
+--secret-file ~/dev/velero/creds/credentials-velero-minio \
+--bucket acme-development \
+--backup-location-config region=minio,s3ForcePathStyle="true",s3Url=http://<ip-address>:9000
+```
+
+
+== Trubleshot
+
+_time="2021-01-06T11:51:17Z" level=info msg="No backup locations were ready to be verified" controller=backupstoragelocation logSource="pkg/controller/backupstoragelocation_controller.go:120"
+time="2021-01-06T11:51:17Z" level=error msg="Current backup storage locations available/unavailable/unknown: 0/0/1)" controller=backupstoragelocation logSource="pkg/controller/backupstoragelocation_controller.go:154"
+I0106 11:51:18.685344       1 request.go:621] Throttling request took 1.048411596s, request: GET:https://10.0.0.1:443/apis/apiregistration.k8s.io/v1beta1?timeout=32s_
+
+```bash
+❯ kubectl get secrets -n velero cloud-credentials -o jsonpath="{.data.cloud}" | base64 -d
+[default]
+aws_access_key_id = minioadmin
+aws_secret_access_key = minioadmin
+```
