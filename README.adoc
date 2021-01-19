@@ -5,6 +5,8 @@ that you can install velero you have a kind-cluster and minio running
 
 ==== Minio running in a docker container
 
+In this repo there are the default user and password.
+
 ```bash
 docker run -d --rm -p 9000:9000 --name minio \
   -e "MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE" \
@@ -12,17 +14,21 @@ docker run -d --rm -p 9000:9000 --name minio \
   -v ${HOME}/dev/velero/data:/data \
   minio/minio server /data
 ```
-to get access on a mac => systempreference - network - IP   <ip-address>:9000 or localhost:9000
+to get access on a mac => systempreference - network - IP   <ip-address>:9000 or localhost:9000 +
 add a new bucket => acme-develpoment
 
 ==== Kind Kubernetes in Docker
 
-kind create cluster --name velero --image kindest/node:v1.19.1
-
+```bash
+$ kind create cluster --name velero --image kindest/node:v1.19.1
+````
 
 === Install Velero
 
 1. with brew
+```bash
+brew install velero
+```
 
 2. in a container
 
@@ -44,9 +50,9 @@ mv ./kubectl /usr/local/bin/kubectl
 in the container
 
 ```bash
-export VELERO_VERSION=v1.5.1
+export VELERO_VERSION=v1.5.3
 # version see https://github.com/vmware-tanzu/velero/releases/
-curl -L -o /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERSION}/velero-${VERERO_VERSION}-linux-amd64.tar.gz
+curl -L -o /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERSION}/velero-${VELERO_VERSION}-linux-amd64.tar.gz
 tar -C /tmp -xvf /tmp/velero.tar.gz
 mv /tmp/velero-${VELERO_VERSION}-linux-amd64/velero /usr/local/bin/velero
 chmod +x /usr/local/bin/velero
@@ -69,8 +75,9 @@ velero install \
 --use-volume-snapshots=false \
 --secret-file ~/dev/velero/creds/credentials-velero-minio \
 --bucket acme-development \
---backup-location-config region=minio,s3ForcePathStyle="true",s3Url=http://<ip-address>:9000
+--backup-location-config region=minio,s3ForcePathStyle="true",s3Url=http://*<ip-address>:9000
 ```
+*change the IP to your IP-address from the minio container.
 
 === Backup
 
@@ -89,6 +96,19 @@ velero install \
 ```bash
 # velero restore create default-namespace-backup --from-backup default-namespace-backup
 ```
+
+
+=== Clean Up
+
+Uninstall Verlero
+```bash
+in the container
+#
+
+````
+
+
+
 
 === Trubleshot
 
