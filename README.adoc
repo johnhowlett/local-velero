@@ -103,11 +103,24 @@ velero install \
 Uninstall Verlero
 ```bash
 in the container
-#
+
+velero install -o yaml --dry-run \
+--provider aws \
+--plugins velero/velero-plugin-for-aws:v1.1.0 \
+--use-volume-snapshots=false \
+--secret-file ~/dev/velero/creds/credentials-velero-minio \
+--bucket acme-development \
+--backup-location-config region=minio,s3ForcePathStyle="true",s3Url=http://*<ip-address>:9000  | kubectl delete -f -
 
 ````
+delete container +
+exit out of the container with the --rm the container is deleted.
 
+Delete the kind cluster
 
+```bash
+kind delete cluster velero
+```
 
 
 === Trubleshot
