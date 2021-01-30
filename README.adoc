@@ -46,7 +46,7 @@ chmod +x ./kubectl
 mv ./kubectl /usr/local/bin/kubectl
 ```
 
-# install verlero 1.5.1
+# install verlero
 in the container
 
 ```bash
